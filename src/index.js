@@ -2,11 +2,10 @@ import { randomNum, getAngleFromCoords, getDistanceFromCoords } from './math';
 import { canvas, ctx } from './constants';
 import Scoreboard from './components/Scoreboard';
 
-// const canvas = document.getElementById('canvas');
-// const ctx = canvas.getContext('2d');
-
-canvas.width = innerWidth;
-canvas.height = innerWidth * 0.75;
+// canvas.width = innerWidth;
+// canvas.height = innerWidth * 0.75;
+canvas.width = document.body.clientWidth;
+canvas.height = document.body.clientHeight;
 
 let gameId;
 

@@ -2,17 +2,7 @@ body {
     font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     margin: 0;
     padding: 0;
-}
-
-h1 {
-    font-size: 2em;
-    font-weight: bold;
-    text-align: center;
-}
-
-#canvas-container {
-    display: inline-flex;
-    width: 60vw;
+    height: 100vh;
 }
 
 #canvas {
