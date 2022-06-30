@@ -1,32 +1,26 @@
 import { ctx } from '../constants';
 
 export default class Button {
-    constructor(x, y, width, height, backgroundColor, text) {
+    constructor(x, y, backgroundColor, text) {
         this.x = x;
         this.y = y;
-        this.width = width;
-        this.height = height;
         this.text = text;
         this.backgroundColor = backgroundColor;
     }
 
     draw() {
-        // ctx.textAlign = 'start';
-        // ctx.baseLine = 'top';
-        // ctx.font = '20px Arial';
-        // ctx.fillStyle = 'white';
-        // ctx.fillText(`Score: ${this.score}`, this.x, this.y);
+        // button text
+        ctx.font = '20px Arial';
+        const textWidth = ctx.measureText(this.text).width;
 
         ctx.beginPath();
-        ctx.rect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+        ctx.rect(this.x - textWidth / 2 - 20, this.y - 20, textWidth + 40, 30);
         ctx.fillStyle = this.backgroundColor;
         ctx.fill();
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'black';
         ctx.stroke();
 
-        // button text
-        ctx.font = '20px Arial';
         ctx.fillStyle = 'white';
         ctx.textAlign = 'center';
         ctx.baseLine = 'middle';

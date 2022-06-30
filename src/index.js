@@ -3,13 +3,7 @@ import { canvas, ctx, playerSize } from './constants';
 import Scoreboard from './components/Scoreboard';
 import Projectile from './components/Projectile';
 import Particle from './components/Particle';
-// import Player from './components/Player';
 import Button from './components/Button';
-
-// canvas.width = innerWidth;
-// canvas.height = innerWidth * 0.75;
-// canvas.width = document.body.clientWidth;
-// canvas.height = document.body.clientHeight;
 
 let gameId;
 
@@ -29,14 +23,20 @@ const drawTitleScr = () => {
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.baseLine = 'middle';
-    ctx.fillText('Game Demo', canvas.width / 2, canvas.height / 2 - 200);
+    ctx.fillText('Game Demo', canvas.width / 2, canvas.height / 2 - 80);
 
-    const playButton = new Button(canvas.width / 2, canvas.height / 2, 200, 200, 'blue', 'Play Game');
+    const playButton = new Button(canvas.width / 2, canvas.height / 2, '#333', 'Play Game');
     canvas.onmousedown = () => {
         resetGame();
         startGame();
     };
     playButton.draw();
+
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.baseLine = 'middle';
+    ctx.fillText('WASD to move, mouse to aim, click or spacebar to shoot', canvas.width / 2, canvas.height / 2 + 80);
 };
 
 const updateCanvasSize = () => {
@@ -244,7 +244,7 @@ const gameOver = () => {
     cancelAnimationFrame(gameId);
     window.removeEventListener('keydown', handleKeypress);
     player.isDead = true;
-    const button = new Button(canvas.width / 2, canvas.height / 2, 200, 200, 'blue', 'Play again?');
+    const button = new Button(canvas.width / 2, canvas.height / 2, '#333', 'Play again?');
     canvas.onmousedown = () => {
         resetGame();
         startGame();
