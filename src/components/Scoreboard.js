@@ -19,4 +19,8 @@ export default class Scoreboard {
         this.score++;
         this.draw();
     }
+
+    reset() {
+        this.score = 0;
+    }
 }

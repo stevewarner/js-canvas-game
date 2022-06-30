@@ -1,30 +1,53 @@
-import { randomNum, getAngleFromCoords, getDistanceFromCoords } from './math';
-import { canvas, ctx } from './constants';
+import { randomNum, getAngleFromCoords, getDistanceFromCoords, isInBounds } from './math';
+import { canvas, ctx, playerSize } from './constants';
 import Scoreboard from './components/Scoreboard';
+import Projectile from './components/Projectile';
+import Particle from './components/Particle';
+// import Player from './components/Player';
+import Button from './components/Button';
 
 // canvas.width = innerWidth;
 // canvas.height = innerWidth * 0.75;
-canvas.width = document.body.clientWidth;
-canvas.height = document.body.clientHeight;
+// canvas.width = document.body.clientWidth;
+// canvas.height = document.body.clientHeight;
 
 let gameId;
 
+/mobile/i.test(navigator.userAgent) &&
+    !location.hash &&
+    setTimeout(function () {
+        window.scrollTo(0, 1);
+    }, 1000);
+
 canvas.focus();
 
-// const updateWidth = () => {
-//     console.log('updateWidth');
-//     canvas.width = innerWidth;
-//     canvas.height = innerWidth * 0.75;
-// };
+const drawTitleScr = () => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// addEventListener('resize', updateWidth);
-// removeEventListener('resize', updateWidth);
+    ctx.font = '100px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.baseLine = 'middle';
+    ctx.fillText('Game Demo', canvas.width / 2, canvas.height / 2 - 200);
 
-const isInBounds = (x, y, size) => {
-    return x >= 0 && x + size <= canvas.width && y >= 0 && y + size <= canvas.height;
+    const playButton = new Button(canvas.width / 2, canvas.height / 2, 200, 200, 'blue', 'Play Game');
+    canvas.onmousedown = () => {
+        resetGame();
+        startGame();
+    };
+    playButton.draw();
 };
 
-const playerSize = 32;
+const updateCanvasSize = () => {
+    const { clientWidth, clientHeight } = document.body;
+    canvas.width = clientWidth; // * level.width * scale
+    canvas.height = clientHeight;
+    drawTitleScr();
+};
+
+updateCanvasSize();
+addEventListener('resize', updateCanvasSize);
 
 class Player {
     constructor(x, y, width, height, color) {
@@ -163,72 +186,6 @@ class Enemy {
     }
 }
 
-class Projectile {
-    constructor(x, y, radius, color, velocity) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.color = color;
-        this.velocity = velocity;
-    }
-
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-    }
-
-    update() {
-        this.draw();
-        this.x = this.x + this.velocity.x;
-        this.y = this.y + this.velocity.y;
-    }
-
-    isInBounds() {
-        return isInBounds(this.x, this.y, this.radius);
-    }
-}
-
-const friction = 0.99;
-
-class Particle {
-    constructor(x, y, radius, color, velocity) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.color = color;
-        this.velocity = velocity;
-        this.alpha = 1;
-    }
-
-    draw() {
-        ctx.save();
-        ctx.globalAlpha = this.alpha;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.restore();
-    }
-
-    update() {
-        this.draw();
-        this.velocity.x *= friction;
-        this.velocity.y *= friction;
-        this.x = this.x + this.velocity.x;
-        this.y = this.y + this.velocity.y;
-        this.alpha -= 0.01;
-    }
-
-    isInBounds() {
-        return isInBounds(this.x, this.y, this.radius);
-    }
-}
-
-ctx.fillStyle = 'green';
-ctx.fillRect(10, 10, 150, 100);
-
 // create new player
 const player = new Player(
     canvas.width / 2 - playerSize / 2,
@@ -240,21 +197,67 @@ const player = new Player(
 
 const scoreboard = new Scoreboard();
 
-const enemies = [];
-const projectiles = [];
-const particles = [];
+let enemies = [];
+let projectiles = [];
+let particles = [];
 let spawnInterval;
+
+const startGame = () => {
+    spawnEnemies();
+    animate();
+    window.addEventListener(
+        'gamepadconnected',
+        function (e) {
+            gamepadHandler(e, true);
+        },
+        false
+    );
+    window.addEventListener(
+        'gamepaddisconnected',
+        function (e) {
+            gamepadHandler(e, false);
+        },
+        false
+    );
+
+    // Controls - mouse
+    canvas.onmousemove = (e) => {
+        const { offsetX, offsetY } = e;
+        player.offsetX = offsetX;
+        player.offsetY = offsetY;
+        player.update(player.aimX, player.aimY, player.aimAngle);
+    };
+
+    canvas.onmousedown = () => {
+        shootProjectile();
+    };
+
+    canvas.onmouseup = () => {
+        player.isShooting = false;
+    };
+
+    window.addEventListener('keydown', handleKeypress);
+};
 
 const gameOver = () => {
     clearInterval(spawnInterval);
     cancelAnimationFrame(gameId);
     window.removeEventListener('keydown', handleKeypress);
     player.isDead = true;
-    ctx.font = '40px Arial';
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.baseLine = 'middle';
-    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+    const button = new Button(canvas.width / 2, canvas.height / 2, 200, 200, 'blue', 'Play again?');
+    canvas.onmousedown = () => {
+        resetGame();
+        startGame();
+    };
+    button.draw();
+};
+
+const resetGame = () => {
+    player.isDead = false;
+    enemies = [];
+    projectiles = [];
+    particles = [];
+    scoreboard.reset();
 };
 
 const spawnEnemies = () => {
@@ -335,22 +338,6 @@ const animate = () => {
     });
 };
 
-// Controls - mouse
-canvas.onmousemove = (e) => {
-    const { offsetX, offsetY } = e;
-    player.offsetX = offsetX;
-    player.offsetY = offsetY;
-    player.update(player.aimX, player.aimY, player.aimAngle);
-};
-
-canvas.onmousedown = () => {
-    shootProjectile();
-};
-
-canvas.onmouseup = () => {
-    player.isShooting = false;
-};
-
 const handleKeypress = (e) => {
     e.preventDefault();
     const tempX = player.x;
@@ -381,7 +368,18 @@ const handleKeypress = (e) => {
     player.update();
 };
 
-window.addEventListener('keydown', handleKeypress);
+// controller support
+const gamepads = {};
 
-spawnEnemies();
-animate();
+function gamepadHandler(event, connecting) {
+    const gamepad = event.gamepad;
+    // Note:
+    // gamepad === navigator.getGamepads()[gamepad.index]
+
+    if (connecting) {
+        console.log('gamepad connected!!!!');
+        gamepads[gamepad.index] = gamepad;
+    } else {
+        delete gamepads[gamepad.index];
+    }
+}

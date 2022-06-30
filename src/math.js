@@ -1,3 +1,5 @@
+import { canvas } from './constants';
+
 export const getAngleFromCoords = (x1, y1, x2, y2, rtrnVal) => {
     let deltaX = x2 - x1;
     let deltaY = y2 - y1;
@@ -18,4 +20,8 @@ export const getDistanceFromCoords = (x1, y1, x2, y2) => {
 
 export const randomNum = (min, max) => {
     return Math.random() * (max - min) + min;
+};
+
+export const isInBounds = (x, y, size) => {
+    return x >= 0 && x + size <= canvas.width && y >= 0 && y + size <= canvas.height;
 };
