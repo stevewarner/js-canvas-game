@@ -298,6 +298,7 @@ const pauseGame = () => {
     cancelAnimationFrame(gameId);
     player.isDead = true;
     window.removeEventListener('keydown', handleKeypress);
+    clearInterval(spawnInterval);
     const button = new Button(canvas.width / 2, canvas.height / 2, '#333', 'Resume game?');
     canvas.onmousedown = () => {
         resumeGame();
@@ -308,6 +309,7 @@ const pauseGame = () => {
 const resumeGame = () => {
     player.isDead = false;
     window.addEventListener('keydown', handleKeypress);
+    spawnEnemies();
     canvas.onmousedown = () => {
         shootProjectile();
     };
@@ -330,6 +332,7 @@ const spawnEnemies = () => {
             x: Math.cos(angle),
             y: Math.sin(angle),
         };
+        console.log('enemy spawned');
         enemies.push(new Enemy(x, y, velocity));
     }, 3000);
 };
