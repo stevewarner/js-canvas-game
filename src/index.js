@@ -1,5 +1,5 @@
 import { randomNum, getAngleFromCoords, getDistanceFromCoords, isInBounds } from './math';
-import { canvas, ctx, playerSize } from './constants';
+import { canvas, ctx, playerSize, frameMinTime } from './constants';
 import Scoreboard from './components/Scoreboard';
 import Projectile from './components/Projectile';
 import Particle from './components/Particle';
@@ -43,6 +43,9 @@ const updateCanvasSize = () => {
     const { clientWidth, clientHeight } = document.body;
     canvas.width = clientWidth; // * level.width * scale
     canvas.height = clientHeight;
+    if (gameId !== undefined) {
+        gameOver();
+    }
     drawTitleScr();
 };
 
@@ -89,6 +92,20 @@ class Player {
         ctx.moveTo(this.x + this.width / 2, this.y + this.height / 2);
         ctx.lineTo(this.aimX, this.aimY);
         ctx.stroke();
+    }
+
+    move(x, y) {
+        const tempX = this.x;
+        const tempY = this.y;
+        this.x += x;
+        this.y += y;
+
+        if (!player.isInBounds()) {
+            player.x = tempX;
+            player.y = tempY;
+        } else {
+            this.update();
+        }
     }
 
     update() {
@@ -187,7 +204,7 @@ class Enemy {
 }
 
 // create new player
-const player = new Player(
+let player = new Player(
     canvas.width / 2 - playerSize / 2,
     canvas.height / 2 - playerSize / 2,
     playerSize,
@@ -202,9 +219,13 @@ let projectiles = [];
 let particles = [];
 let spawnInterval;
 
+const handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') pauseGame();
+};
+
 const startGame = () => {
     spawnEnemies();
-    animate();
+    requestAnimationFrame(animate);
     window.addEventListener(
         'gamepadconnected',
         function (e) {
@@ -219,6 +240,8 @@ const startGame = () => {
         },
         false
     );
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Controls - mouse
     canvas.onmousemove = (e) => {
@@ -237,13 +260,17 @@ const startGame = () => {
     };
 
     window.addEventListener('keydown', handleKeypress);
+    window.addEventListener('keyup', handleKeypress);
 };
 
 const gameOver = () => {
     clearInterval(spawnInterval);
     cancelAnimationFrame(gameId);
     window.removeEventListener('keydown', handleKeypress);
+    window.removeEventListener('visibilitychange', handleVisibilityChange);
     player.isDead = true;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const button = new Button(canvas.width / 2, canvas.height / 2, '#333', 'Play again?');
     canvas.onmousedown = () => {
         resetGame();
@@ -258,6 +285,33 @@ const resetGame = () => {
     projectiles = [];
     particles = [];
     scoreboard.reset();
+    player = new Player(
+        canvas.width / 2 - playerSize / 2,
+        canvas.height / 2 - playerSize / 2,
+        playerSize,
+        playerSize,
+        '#fff'
+    );
+};
+
+const pauseGame = () => {
+    cancelAnimationFrame(gameId);
+    player.isDead = true;
+    window.removeEventListener('keydown', handleKeypress);
+    const button = new Button(canvas.width / 2, canvas.height / 2, '#333', 'Resume game?');
+    canvas.onmousedown = () => {
+        resumeGame();
+    };
+    button.draw();
+};
+
+const resumeGame = () => {
+    player.isDead = false;
+    window.addEventListener('keydown', handleKeypress);
+    canvas.onmousedown = () => {
+        shootProjectile();
+    };
+    gameId = requestAnimationFrame(animate);
 };
 
 const spawnEnemies = () => {
@@ -277,11 +331,7 @@ const spawnEnemies = () => {
             y: Math.sin(angle),
         };
         enemies.push(new Enemy(x, y, velocity));
-
-        // setTimeout(() => spawnEnemies(), 3000);
-        // if (spawnInterval > 0) spawnInterval -= 100;
-        // console.log(spawnInterval);
-    }, 1000);
+    }, 3000);
 };
 
 const shootProjectile = () => {
@@ -296,20 +346,50 @@ const shootProjectile = () => {
 
     projectiles.push(
         new Projectile(player.aimX, player.aimY, 5, player.color, {
-            x: Math.cos(angle) * 10,
-            y: Math.sin(angle) * 10,
+            x: Math.cos(angle) * 20,
+            y: Math.sin(angle) * 20,
         })
     );
 };
 
+const controller = {
+    87: { pressed: false, func: () => player.move(0, -10) }, // W
+    65: { pressed: false, func: () => player.move(-10, 0) }, // A
+    83: { pressed: false, func: () => player.move(0, 10) }, // S
+    68: { pressed: false, func: () => player.move(10, 0) }, // D
+    32: { pressed: false, func: () => shootProjectile() },
+    27: { pressed: false, func: () => pauseGame() },
+};
+
+const handleKeypress = (e) => {
+    e.preventDefault();
+    const { keyCode, type } = e;
+
+    if (controller[keyCode]) {
+        controller[keyCode].pressed = type === 'keydown' ? true : false;
+    }
+};
+
 // Animation loop
-const animate = () => {
+let lastFrameTime = 0;
+const animate = (time) => {
+    if (time - lastFrameTime < frameMinTime) {
+        // request next frame and skip everything else
+        gameId = requestAnimationFrame(animate);
+        return;
+    }
+    lastFrameTime = time;
+    // render the frame
     gameId = requestAnimationFrame(animate);
     // ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // this shows prev frames faded out
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     player.draw();
     scoreboard.draw();
+
+    Object.keys(controller).forEach((key) => {
+        controller[key].pressed && controller[key].func();
+    });
 
     enemies.forEach((enemy) => {
         enemy.update();
@@ -336,36 +416,6 @@ const animate = () => {
             }, 0);
         }
     });
-};
-
-const handleKeypress = (e) => {
-    e.preventDefault();
-    const tempX = player.x;
-    const tempY = player.y;
-    const { keyCode } = e;
-    /* eslint-disable default-case */
-    switch (keyCode) {
-        case 87:
-            player.y -= 10;
-            break;
-        case 65:
-            player.x -= 10;
-            break;
-        case 83:
-            player.y += 10;
-            break;
-        case 68:
-            player.x += 10;
-            break;
-        case 32:
-            shootProjectile();
-    }
-    if (!player.isInBounds()) {
-        player.x = tempX;
-        player.y = tempY;
-    }
-
-    player.update();
 };
 
 // controller support
