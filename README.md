@@ -1,10 +1,6 @@
-# Phaser 3 Webpack Project Template
+# JS Canvas Game Webpack Project Template
 
-A Phaser 3 project template with ES6 support via [Babel 7](https://babeljs.io/) and [Webpack 4](https://webpack.js.org/) that includes hot-reloading for development and production-ready builds.
-
-This has been updated for Phaser 3.50.0 version and above.
-
-Loading images via JavaScript module `import` is also supported, although not recommended.
+HTML5 Canvas and Javascript game template for a top down shooter style game
 
 ## Requirements
 

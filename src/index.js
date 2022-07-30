@@ -332,7 +332,6 @@ const spawnEnemies = () => {
             x: Math.cos(angle),
             y: Math.sin(angle),
         };
-        console.log('enemy spawned');
         enemies.push(new Enemy(x, y, velocity));
     }, 3000);
 };
