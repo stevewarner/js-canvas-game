@@ -2,6 +2,8 @@
 
 HTML5 Canvas and Javascript game template for a top down shooter style game
 
+[Demo](https://stevewarner.github.io/js-canvas-game/)
+
 ## Requirements
 
 [Node.js](https://nodejs.org) is required to install dependencies and run scripts via `npm`.
